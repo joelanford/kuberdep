@@ -1,0 +1,20 @@
+# permissions for end users to view problems.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: problem-viewer-role
+rules:
+- apiGroups:
+  - kuberdep.io
+  resources:
+  - problems
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kuberdep.io
+  resources:
+  - problems/status
+  verbs:
+  - get

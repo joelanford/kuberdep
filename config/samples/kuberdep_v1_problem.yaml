@@ -1,0 +1,61 @@
+apiVersion: kuberdep.io/v1
+kind: Problem
+metadata:
+  name: problem-sample
+spec:
+  entities:
+  - id: install-alpha
+    constraints:
+      - mandatory: true
+      - dependsOnOneOf:
+          - alpha.v0.1.0
+  - id: unique-packages
+    constraints:
+      - mandatory: true
+      - atMostOf:
+          number: 1
+          ids: [alpha.v0.1.0]
+      - atMostOf:
+          number: 1
+          ids: [beta.v0.1.0,beta.v0.2.0,beta.v0.3.0]
+      - atMostOf:
+          number: 1
+          ids: [gamma.v0.1.0,gamma.v0.2.0,gamma.v0.3.0,gamma.v0.4.0]
+  - id: alpha.v0.1.0
+    constraints:
+#      - all:
+#        - atMostOf:
+#            number: 1
+#            ids: [beta.v0.1.0,beta.v0.2.0,beta.v0.3.0]
+#        - dependsOnOneOf:
+#          - beta.v0.2.0
+#          - beta.v0.1.0
+#        - dependsOnOneOf:
+#          - beta.v0.3.0
+#          - beta.v0.1.0
+      - dependsOnOneOf:
+        - beta.v0.2.0
+        - beta.v0.1.0
+      - conflictsWith: delta.v0.1.0
+  - id: beta.v0.1.0
+    constraints:
+      - dependsOnOneOf:
+          - gamma.v0.1.0
+          - gamma.v0.2.0
+  - id: beta.v0.2.0
+    constraints:
+      - dependsOnOneOf:
+          - gamma.v0.1.0
+          - gamma.v0.2.0
+      - dependsOnOneOf:
+          - delta.v0.1.0
+  - id: beta.v0.3.0
+    constraints:
+      - dependsOnOneOf:
+          - gamma.v0.3.0
+          - gamma.v0.4.0
+  - id: gamma.v0.1.0
+  - id: gamma.v0.2.0
+  - id: gamma.v0.3.0
+  - id: gamma.v0.4.0
+  - id: delta.v0.1.0
