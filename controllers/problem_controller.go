@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"github.com/joelanford/kuberdep/pkg/solver"
+	"sort"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -89,6 +90,7 @@ func (r *ProblemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	prob.Status.Solution = asIDStrings(solution...)
+	sort.Strings(prob.Status.Solution)
 	prob.Status.ObservedGeneration = prob.Generation
 	prob.Status.Error = ""
 

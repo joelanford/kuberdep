@@ -31,3 +31,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - kuberdep.io
+  resources:
+  - resolutions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kuberdep.io
+  resources:
+  - resolutions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - kuberdep.io
+  resources:
+  - resolutions/status
+  verbs:
+  - get
+  - patch
+  - update

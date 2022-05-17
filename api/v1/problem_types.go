@@ -25,10 +25,10 @@ import (
 
 // ProblemSpec defines the desired state of Problem
 type ProblemSpec struct {
-	Entities []Entity `json:"entities"`
+	Entities []ProblemEntity `json:"entities"`
 }
 
-type Entity struct {
+type ProblemEntity struct {
 	ID          string       `json:"id"`
 	Constraints []Constraint `json:"constraints,omitempty"`
 }

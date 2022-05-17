@@ -16,4 +16,29 @@ resources:
   kind: Problem
   path: github.com/joelanford/kuberdep/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: io
+  group: kuberdep
+  kind: Entity
+  path: github.com/joelanford/kuberdep/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: io
+  group: kuberdep
+  kind: Resolution
+  path: github.com/joelanford/kuberdep/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: io
+  group: kuberdep
+  kind: ConstraintDefinition
+  path: github.com/joelanford/kuberdep/api/v1
+  version: v1
 version: "3"

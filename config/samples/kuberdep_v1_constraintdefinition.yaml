@@ -1,0 +1,111 @@
+---
+apiVersion: kuberdep.io/v1
+kind: ConstraintDefinition
+metadata:
+  name: kuberdep-v1-mandatory
+spec:
+  id: kuberdep.io/v1/Mandatory
+  body: |
+    return [{mandatory: true}]
+---
+apiVersion: kuberdep.io/v1
+kind: ConstraintDefinition
+metadata:
+  name: kuberdep-v1-requirefilterjs
+spec:
+  id: kuberdep.io/v1/RequireFilterJS
+  body: |
+    let permitted = [];
+    input.Items.forEach(i => {
+        let id = i.ID;
+        let filterFunc = input.Config.filterFunc;
+
+        eval(filterFunc)
+        if (filter(i)) {
+            permitted.push(id)
+        }
+    });
+
+    return [ { dependsOnOneOf: permitted} ]
+---
+apiVersion: kuberdep.io/v1
+kind: ConstraintDefinition
+metadata:
+  name: kuberdep-v1-requirekeyvalue
+spec:
+  id: kuberdep.io/v1/RequireKeyValue
+  body: |
+    let permitted = [];
+    input.Items.forEach(i => {
+        let id = i.ID;
+        i.Properties.forEach(p => {
+            if (p.Type === input.Config.key && p.Value == input.Config.value) {
+                permitted.push(id)
+            }
+        })
+    });
+    return [ { dependsOnOneOf: permitted} ]
+---
+apiVersion: kuberdep.io/v1
+kind: ConstraintDefinition
+metadata:
+  name: kuberdep-v1-requirepackage
+spec:
+  id: kuberdep.io/v1/RequirePackage
+  body: |
+    let permitted = [];
+    input.Items.forEach(i => {
+        let id = i.ID;
+
+        let pkg = ""
+        let vers = ""
+
+        i.Properties.forEach(p => {
+            if (p.Type === "kuberdep.io/v1/Package") {
+                pkg = p.Value
+            }
+            if (p.Type === "kuberdep.io/v1/Version") {
+                vers = p.Value
+            }
+        })
+
+        if (pkg === input.Config.packageName && inSemverRange(input.Config.versionRange, vers)) {
+            permitted.push(id)
+        }
+    });
+
+    return [ { dependsOnOneOf: permitted} ]
+---
+apiVersion: kuberdep.io/v1
+kind: ConstraintDefinition
+metadata:
+  name: kuberdep-v1-unique
+spec:
+  id: kuberdep.io/v1/Unique
+  body: |
+    let itemsByKey = new Map();
+    input.Items.forEach(i => {
+        let id = i.ID;
+        i.Properties.forEach(p => {
+            if (p.Type === input.Config.key) {
+                let key = p.Value;
+                let array = itemsByKey.get(key)
+                if (array === undefined) {
+                    array = []
+                }
+                array.push(id)
+                itemsByKey.set(key, array)
+            }
+        })
+    });
+
+    let staticConstraints = [];
+    for (let value of itemsByKey.entries()) {
+        staticConstraints.push( {
+            atMostOf: {
+                number: 1,
+                ids: value[1],
+            }
+        })
+    }
+    return staticConstraints

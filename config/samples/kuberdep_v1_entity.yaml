@@ -1,0 +1,152 @@
+---
+apiVersion: kuberdep.io/v1
+kind: Entity
+metadata:
+  name: install-alpha
+spec:
+  object:
+    id: install-alpha
+  constraints:
+    - type: kuberdep.io/v1/Mandatory
+    - type: kuberdep.io/v1/RequireKeyValue
+      value:
+        key: kuberdep.io/v1/Package
+        value: alpha
+---
+apiVersion: kuberdep.io/v1
+kind: Entity
+metadata:
+  name: global-unique-package-constraint
+spec:
+  object:
+    id: global-unique-package-constraint
+  constraints:
+    - type: kuberdep.io/v1/Mandatory
+    - type: kuberdep.io/v1/Unique
+      value:
+        key: kuberdep.io/v1/Package
+---
+apiVersion: kuberdep.io/v1
+kind: Entity
+metadata:
+  name: alpha-v0.1.0
+spec:
+  object:
+    id: alpha-v0.1.0
+  properties:
+    - type:  kuberdep.io/v1/Package
+      value: alpha
+    - type: kuberdep.io/v1/Version
+      value: 0.1.0
+  constraints:
+    - type: kuberdep.io/v1/RequirePackage
+      value:
+        packageName: beta
+        versionRange: ">0.1.0"
+    - type: kuberdep.io/v1/RequireFilterJS
+      value:
+        packageName: beta
+        versionRange: ">=0.1.0"
+        filterFunc: |
+          function filter(i) {
+            let pkg = ""
+            let vers = ""
+            i.Properties.forEach(p => {
+              if (p.Type === "kuberdep.io/v1/Package") {
+                pkg = p.Value
+              }
+              if (p.Type === "kuberdep.io/v1/Version") {
+                vers = p.Value
+              }
+            })
+            return (pkg === input.Config.packageName && inSemverRange(input.Config.versionRange, vers))
+          }
+---
+apiVersion: kuberdep.io/v1
+kind: Entity
+metadata:
+  name: beta-v0.1.0
+spec:
+  object:
+    id: beta-v0.1.0
+  properties:
+    - type:  kuberdep.io/v1/Package
+      value: beta
+    - type: kuberdep.io/v1/Version
+      value: 0.1.0
+  constraints:
+    - type: kuberdep.io/v1/RequireKeyValue
+      value:
+        key: kuberdep.io/v1/Package
+        value: gamma
+---
+apiVersion: kuberdep.io/v1
+kind: Entity
+metadata:
+  name: beta-v0.2.0
+spec:
+  object:
+    id: beta-v0.2.0
+  properties:
+    - type:  kuberdep.io/v1/Package
+      value: beta
+    - type: kuberdep.io/v1/Version
+      value: 0.2.0
+  constraints:
+    - type: kuberdep.io/v1/RequirePackage
+      value:
+        packageName: gamma
+        versionRange: "0.2.0"
+---
+apiVersion: kuberdep.io/v1
+kind: Entity
+metadata:
+  name: beta-v0.3.0
+spec:
+  object:
+    id: beta-v0.3.0
+  properties:
+    - type:  kuberdep.io/v1/Package
+      value: beta
+    - type: kuberdep.io/v1/Version
+      value: 0.3.0
+---
+apiVersion: kuberdep.io/v1
+kind: Entity
+metadata:
+  name: gamma-v0.1.0
+spec:
+  object:
+    id: gamma-v0.1.0
+  properties:
+    - type:  kuberdep.io/v1/Package
+      value: gamma
+    - type: kuberdep.io/v1/Version
+      value: 0.1.0
+---
+apiVersion: kuberdep.io/v1
+kind: Entity
+metadata:
+  name: gamma-v0.2.0
+spec:
+  object:
+    id: gamma-v0.2.0
+  properties:
+    - type:  kuberdep.io/v1/Package
+      value: gamma
+    - type: kuberdep.io/v1/Version
+      value: 0.2.0
+---
+apiVersion: kuberdep.io/v1
+kind: Entity
+metadata:
+  name: gamma-v0.3.0
+spec:
+  object:
+    id: gamma-v0.3.0
+  properties:
+    - type:  kuberdep.io/v1/Package
+      value: gamma
+    - type: kuberdep.io/v1/Version
+      value: 0.3.0
+

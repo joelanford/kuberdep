@@ -1,0 +1,5 @@
+apiVersion: kuberdep.io/v1
+kind: Resolution
+metadata:
+  name: resolution-sample
+spec: {}

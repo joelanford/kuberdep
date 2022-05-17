@@ -1,0 +1,20 @@
+# permissions for end users to view entities.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: entity-viewer-role
+rules:
+- apiGroups:
+  - kuberdep.io
+  resources:
+  - entities
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - kuberdep.io
+  resources:
+  - entities/status
+  verbs:
+  - get
