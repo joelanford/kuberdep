@@ -39,6 +39,10 @@ spec:
     - type: kuberdep.io/v1/Version
       value: 0.1.0
   constraints:
+    - type: kuberdep.io/v1/ConflictPackage
+      value:
+        packageName: gamma
+        versionRange: ">=0.2.0"
     - type: kuberdep.io/v1/RequirePackage
       value:
         packageName: beta
@@ -46,12 +50,12 @@ spec:
     - type: kuberdep.io/v1/RequireFilterJS
       value:
         packageName: beta
-        versionRange: ">=0.1.0"
+        versionRange: ">0.1.0"
         filterFunc: |
-          function filter(i) {
+          function filter(item) {
             let pkg = ""
             let vers = ""
-            i.Properties.forEach(p => {
+            item.Properties.forEach(p => {
               if (p.Type === "kuberdep.io/v1/Package") {
                 pkg = p.Value
               }

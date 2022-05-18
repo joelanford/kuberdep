@@ -16,12 +16,12 @@ spec:
   id: kuberdep.io/v1/RequireFilterJS
   body: |
     let permitted = [];
-    input.Items.forEach(i => {
-        let id = i.ID;
+    input.Items.forEach(item => {
+        let id = item.ID;
         let filterFunc = input.Config.filterFunc;
 
         eval(filterFunc)
-        if (filter(i)) {
+        if (filter(item)) {
             permitted.push(id)
         }
     });
@@ -75,6 +75,36 @@ spec:
     });
 
     return [ { dependsOnOneOf: permitted} ]
+---
+apiVersion: kuberdep.io/v1
+kind: ConstraintDefinition
+metadata:
+  name: kuberdep-v1-conflictpackage
+spec:
+  id: kuberdep.io/v1/ConflictPackage
+  body: |
+    let conflicts = [];
+    input.Items.forEach(i => {
+        let id = i.ID;
+
+        let pkg = ""
+        let vers = ""
+
+        i.Properties.forEach(p => {
+            if (p.Type === "kuberdep.io/v1/Package") {
+                pkg = p.Value
+            }
+            if (p.Type === "kuberdep.io/v1/Version") {
+                vers = p.Value
+            }
+        })
+
+        if (pkg === input.Config.packageName && inSemverRange(input.Config.versionRange, vers)) {
+            conflicts.push( { conflictsWith: id } )
+        }
+    });
+
+    return conflicts
 ---
 apiVersion: kuberdep.io/v1
 kind: ConstraintDefinition

@@ -39,7 +39,6 @@ func New(ctx context.Context, cl client.Client) (Plugins, error) {
 	registry.Enable(vm)
 	console.Enable(vm)
 
-	fmt.Println(len(functions.Functions))
 	for _, f := range functions.Functions {
 		name := filepath.Base(runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name())
 		spl := strings.Split(name, ".")

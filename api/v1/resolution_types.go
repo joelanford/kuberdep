@@ -24,10 +24,16 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // ResolutionSpec defines the desired state of Resolution
-type ResolutionSpec struct{}
+type ResolutionSpec struct {
+	EntitySelector metav1.LabelSelector `json:"entitySelector,omitempty"`
+}
 
 // ResolutionStatus defines the observed state of Resolution
-type ResolutionStatus struct{}
+type ResolutionStatus struct {
+	Solution           []string `json:"solution,omitempty"`
+	ObservedGeneration int64    `json:"observedGeneration,omitempty"`
+	Error              string   `json:"error,omitempty"`
+}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

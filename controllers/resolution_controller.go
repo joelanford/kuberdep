@@ -22,11 +22,15 @@ import (
 	"github.com/joelanford/kuberdep/pkg/plugin"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sort"
 
 	kuberdepv1 "github.com/joelanford/kuberdep/api/v1"
@@ -55,7 +59,11 @@ func (r *ResolutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	entities := &kuberdepv1.EntityList{}
-	if err := r.List(ctx, entities); err != nil {
+	selector, err := metav1.LabelSelectorAsSelector(&res.Spec.EntitySelector)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if err := r.List(ctx, entities, client.MatchingLabelsSelector{Selector: selector}); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -129,7 +137,16 @@ func (r *ResolutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 	}
 
-	return ctrl.Result{}, nil
+	if err := r.Get(ctx, client.ObjectKeyFromObject(problem), problem); err != nil {
+		return ctrl.Result{}, err
+	}
+	if problem.Generation == problem.Status.ObservedGeneration {
+		res.Status.Solution = problem.Status.Solution
+		res.Status.Error = problem.Status.Error
+	}
+	res.Status.ObservedGeneration = res.Generation
+
+	return ctrl.Result{}, r.Status().Update(ctx, res)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -137,5 +154,88 @@ func (r *ResolutionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kuberdepv1.Resolution{}).
 		Owns(&kuberdepv1.Problem{}).
+		Watches(&source.Kind{Type: &kuberdepv1.Entity{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+			l := mgr.GetLogger()
+			entity := object.(*kuberdepv1.Entity)
+			resolutions, err := mapEntityToResolutions(context.Background(), r.Client, *entity)
+			if err != nil {
+				l.Error(err, "map entity to resolutions")
+				return nil
+			}
+			var reqs []reconcile.Request
+			for _, resolution := range resolutions {
+				reqs = append(reqs, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(&resolution)})
+			}
+			return reqs
+		})).
+		Watches(&source.Kind{Type: &kuberdepv1.ConstraintDefinition{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+			l := mgr.GetLogger()
+			cd := object.(*kuberdepv1.ConstraintDefinition)
+			resolutions, err := mapConstraintDefinitionToResolutions(context.Background(), r.Client, *cd)
+			if err != nil {
+				l.Error(err, "map constraint definition to resolutions")
+				return nil
+			}
+			var reqs []reconcile.Request
+			for _, resolution := range resolutions {
+				reqs = append(reqs, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(&resolution)})
+			}
+			return reqs
+		})).
 		Complete(r)
+}
+
+func mapConstraintDefinitionToEntities(ctx context.Context, cl client.Client, cd kuberdepv1.ConstraintDefinition) ([]kuberdepv1.Entity, error) {
+	entities := &kuberdepv1.EntityList{}
+	if err := cl.List(ctx, entities); err != nil {
+		return nil, err
+	}
+
+	var out []kuberdepv1.Entity
+	for _, entity := range entities.Items {
+		for _, c := range entity.Spec.Constraints {
+			if c.Type == cd.Spec.ID {
+				out = append(out, entity)
+				break
+			}
+		}
+	}
+	return out, nil
+}
+
+func mapEntityToResolutions(ctx context.Context, cl client.Client, entity kuberdepv1.Entity) ([]kuberdepv1.Resolution, error) {
+	resolutions := &kuberdepv1.ResolutionList{}
+	if err := cl.List(ctx, resolutions); err != nil {
+		return nil, err
+	}
+
+	var out []kuberdepv1.Resolution
+	for _, resolution := range resolutions.Items {
+		ls, err := metav1.LabelSelectorAsSelector(&resolution.Spec.EntitySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		if ls.Matches(labels.Set(entity.Labels)) {
+			out = append(out, resolution)
+			continue
+		}
+	}
+	return out, nil
+}
+
+func mapConstraintDefinitionToResolutions(ctx context.Context, cl client.Client, cd kuberdepv1.ConstraintDefinition) ([]kuberdepv1.Resolution, error) {
+	entities, err := mapConstraintDefinitionToEntities(ctx, cl, cd)
+	if err != nil {
+		return nil, err
+	}
+	var out []kuberdepv1.Resolution
+	for _, entity := range entities {
+		resolutions, err := mapEntityToResolutions(ctx, cl, entity)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, resolutions...)
+	}
+	return out, nil
 }

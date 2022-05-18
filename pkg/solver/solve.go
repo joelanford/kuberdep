@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/go-air/gini"
@@ -26,6 +27,7 @@ func (e NotSatisfiable) Error() string {
 	for i, a := range e {
 		s[i] = a.String()
 	}
+	sort.Strings(s)
 	return fmt.Sprintf("%s: %s", msg, strings.Join(s, ", "))
 }
 
